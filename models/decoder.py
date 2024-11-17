@@ -51,8 +51,8 @@ class Decoder(nn.Module):
 
         return x
     '''
-
-class ParallelDecoderLayer(nn.Module):
+#paralled decoder test stuff:
+class DecoderLayer(nn.Module):
     def __init__(self, cross_attention, d_model, d_ff=None, dropout=0.1, activation="relu"):
         super(ParallelDecoderLayer, self).__init__()
         d_ff = d_ff or 4 * d_model
@@ -76,7 +76,7 @@ class ParallelDecoderLayer(nn.Module):
         y = self.dropout(self.conv2(y).transpose(-1, 1))
         return self.norm2(x + y)
 
-class ParallelDecoder(nn.Module):
+class Decoder(nn.Module):
     def __init__(self, layers, norm_layer=None):
         super(ParallelDecoder, self).__init__()
         self.layers = nn.ModuleList(layers)
