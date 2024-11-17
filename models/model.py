@@ -67,20 +67,22 @@ class Informer(nn.Module):
         self.projection = nn.Linear(d_model, c_out, bias=True)
         
     def forward(self, x_enc, x_mark_enc, x_dec, x_mark_dec, 
-                enc_self_mask=None, dec_self_mask=None, dec_enc_mask=None):
+            enc_self_mask=None, dec_self_mask=None, dec_enc_mask=None):
+        # Encoder forward pass
         enc_out = self.enc_embedding(x_enc, x_mark_enc)
         enc_out, attns = self.encoder(enc_out, attn_mask=enc_self_mask)
 
+        # Decoder forward pass
         dec_out = self.dec_embedding(x_dec, x_mark_dec)
-        dec_out = self.decoder(dec_out, enc_out, x_mask=dec_self_mask, cross_mask=dec_enc_mask)
+        # Pass only `enc_out` and `dec_enc_mask` to the new decoder
+        dec_out = self.decoder(dec_out, enc_out, cross_mask=dec_enc_mask)
         dec_out = self.projection(dec_out)
         
-        # dec_out = self.end_conv1(dec_out)
-        # dec_out = self.end_conv2(dec_out.transpose(2,1)).transpose(1,2)
+        # Extract the final prediction sequence
         if self.output_attention:
-            return dec_out[:,-self.pred_len:,:], attns
+            return dec_out[:, -self.pred_len:, :], attns
         else:
-            return dec_out[:,-self.pred_len:,:] # [B, L, D]
+            return dec_out[:, -self.pred_len:, :]  # [B, L, D]
 
 
 class InformerStack(nn.Module):
@@ -122,20 +124,22 @@ class InformerStack(nn.Module):
                 norm_layer=torch.nn.LayerNorm(d_model)
             ) for el in e_layers]
         self.encoder = EncoderStack(encoders, inp_lens)
-        # Decoder
+        # Updated Decoder
         self.decoder = Decoder(
             [
                 DecoderLayer(
-                    AttentionLayer(Attn(True, factor, attention_dropout=dropout, output_attention=False), 
-                                d_model, n_heads, mix=mix),
-                    AttentionLayer(FullAttention(False, factor, attention_dropout=dropout, output_attention=False), 
-                                d_model, n_heads, mix=False),
-                    d_model,
-                    d_ff,
+                    AttentionLayer(
+                        FullAttention(False, factor, attention_dropout=dropout, output_attention=False),
+                        d_model, 
+                        n_heads, 
+                        mix=False
+                    ),
+                    d_model=d_model,
+                    d_ff=d_ff,
                     dropout=dropout,
-                    activation=activation,
+                    activation=activation
                 )
-                for l in range(d_layers)
+                for _ in range(d_layers)  # d_layers is the number of decoder layers
             ],
             norm_layer=torch.nn.LayerNorm(d_model)
         )
@@ -144,17 +148,19 @@ class InformerStack(nn.Module):
         self.projection = nn.Linear(d_model, c_out, bias=True)
         
     def forward(self, x_enc, x_mark_enc, x_dec, x_mark_dec, 
-                enc_self_mask=None, dec_self_mask=None, dec_enc_mask=None):
+            enc_self_mask=None, dec_self_mask=None, dec_enc_mask=None):
+        # Encoder forward pass
         enc_out = self.enc_embedding(x_enc, x_mark_enc)
         enc_out, attns = self.encoder(enc_out, attn_mask=enc_self_mask)
 
+        # Decoder forward pass
         dec_out = self.dec_embedding(x_dec, x_mark_dec)
-        dec_out = self.decoder(dec_out, enc_out, x_mask=dec_self_mask, cross_mask=dec_enc_mask)
+        # Pass only `enc_out` and `dec_enc_mask` to the new decoder
+        dec_out = self.decoder(dec_out, enc_out, cross_mask=dec_enc_mask)
         dec_out = self.projection(dec_out)
         
-        # dec_out = self.end_conv1(dec_out)
-        # dec_out = self.end_conv2(dec_out.transpose(2,1)).transpose(1,2)
+        # Extract the final prediction sequence
         if self.output_attention:
-            return dec_out[:,-self.pred_len:,:], attns
+            return dec_out[:, -self.pred_len:, :], attns
         else:
-            return dec_out[:,-self.pred_len:,:] # [B, L, D]
+            return dec_out[:, -self.pred_len:, :]  # [B, L, D]
