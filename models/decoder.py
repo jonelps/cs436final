@@ -54,7 +54,7 @@ class Decoder(nn.Module):
 #paralled decoder test stuff:
 class DecoderLayer(nn.Module):
     def __init__(self, cross_attention, d_model, d_ff=None, dropout=0.1, activation="relu"):
-        super(ParallelDecoderLayer, self).__init__()
+        super(DecoderLayer, self).__init__()
         d_ff = d_ff or 4 * d_model
         self.cross_attention = cross_attention
         self.conv1 = nn.Conv1d(in_channels=d_model, out_channels=d_ff, kernel_size=1)
@@ -78,7 +78,7 @@ class DecoderLayer(nn.Module):
 
 class Decoder(nn.Module):
     def __init__(self, layers, norm_layer=None):
-        super(ParallelDecoder, self).__init__()
+        super(Decoder, self).__init__()
         self.layers = nn.ModuleList(layers)
         self.norm = norm_layer
 
