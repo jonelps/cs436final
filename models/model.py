@@ -43,20 +43,22 @@ class Informer(nn.Module):
             ] if distil else None,
             norm_layer=torch.nn.LayerNorm(d_model)
         )
-        # Decoder
+        # Updated Decoder
         self.decoder = Decoder(
             [
                 DecoderLayer(
-                    AttentionLayer(Attn(True, factor, attention_dropout=dropout, output_attention=False), 
-                                d_model, n_heads, mix=mix),
-                    AttentionLayer(FullAttention(False, factor, attention_dropout=dropout, output_attention=False), 
-                                d_model, n_heads, mix=False),
-                    d_model,
-                    d_ff,
+                    AttentionLayer(
+                        FullAttention(False, factor, attention_dropout=dropout, output_attention=False),
+                        d_model, 
+                        n_heads, 
+                        mix=False
+                    ),
+                    d_model=d_model,
+                    d_ff=d_ff,
                     dropout=dropout,
-                    activation=activation,
+                    activation=activation
                 )
-                for l in range(d_layers)
+                for _ in range(d_layers)  # d_layers is the number of decoder layers
             ],
             norm_layer=torch.nn.LayerNorm(d_model)
         )
